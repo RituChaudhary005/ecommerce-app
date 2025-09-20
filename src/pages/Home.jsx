@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Spin, Input, Select, Typography } from "antd";
+import { Row, Col, Spin, Typography, Statistic, Empty } from "antd";
 import { getProducts, getCategories } from "../api/api";
 import ProductCard from "../components/ProductCard";
+import { ShoppingOutlined, TagsOutlined, StarOutlined } from "@ant-design/icons";
 
-const { Option } = Select;
+const { Title, Paragraph } = Typography;
 
-const Home = () => {
+const Home = ({ search, category, setCategories }) => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
 
   // Fetch products and categories
   useEffect(() => {
@@ -19,7 +18,12 @@ const Home = () => {
       .then(([prodRes, catRes]) => {
         setProducts(prodRes.data);
         setFilteredProducts(prodRes.data);
-        setCategories(catRes.data);
+        const fetchedCategories = catRes.data;
+        setCategories(fetchedCategories);
+        // Pass categories to parent component
+        if (setCategories) {
+          setCategories(fetchedCategories);
+        }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -41,41 +45,104 @@ const Home = () => {
     setFilteredProducts(filtered);
   }, [search, category, products]);
 
-  if (loading) return <Spin size="large" style={{ display: "block", margin: "2rem auto" }} />;
+  if (loading) {
+    return (
+      <div className="custom-spinner">
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <Typography.Title level={2}>Products</Typography.Title>
+    <div>
+      {/* Hero Section */}
+      <div className="hero-section">
+        <Title level={1} className="hero-title" style={{ color: "white", margin: 0 }}>
+          Welcome to E-Shop
+        </Title>
+        <Paragraph className="hero-subtitle" style={{ color: "white", opacity: 0.9 }}>
+          Discover amazing products at unbeatable prices. Shop with confidence and enjoy fast, secure delivery.
+        </Paragraph>
+      </div>
 
-      {/* Filters */}
-      <Row gutter={[16, 16]} style={{ marginBottom: "1rem" }}>
-        <Col xs={24} sm={12}>
-          <Input
-            placeholder="Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            allowClear
-          />
-        </Col>
-        <Col xs={24} sm={12}>
-          <Select
-            value={category}
-            onChange={(value) => setCategory(value)}
-            style={{ width: "100%" }}
-          >
-            <Option value="all">All Categories</Option>
-            {categories.map((cat) => (
-              <Option key={cat} value={cat}>{cat}</Option>
-            ))}
-          </Select>
-        </Col>
-      </Row>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem" }}>
+        {/* Stats Section */}
+        <div className="stats-section">
+          <Row gutter={[32, 16]}>
+            <Col xs={24} sm={8}>
+              <div className="stat-item">
+                <Statistic
+                  title="Total Products"
+                  value={products.length}
+                  prefix={<ShoppingOutlined />}
+                  valueStyle={{ color: '#ff6b35' }}
+                />
+              </div>
+            </Col>
+            <Col xs={24} sm={8}>
+              <div className="stat-item">
+                <Statistic
+                  title="Categories"
+                  value={categories.length}
+                  prefix={<TagsOutlined />}
+                  valueStyle={{ color: '#ff6b35' }}
+                />
+              </div>
+            </Col>
+            <Col xs={24} sm={8}>
+              <div className="stat-item">
+                <Statistic
+                  title="Showing"
+                  value={filteredProducts.length}
+                  prefix={<StarOutlined />}
+                  valueStyle={{ color: '#ff6b35' }}
+                />
+              </div>
+            </Col>
+          </Row>
+        </div>
 
-      {/* Product Grid */}
-      <Row gutter={[16, 16]}>
-        {filteredProducts.map((product) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
-            <ProductCard product={product} />
+        {/* Products Section */}
+        <div className="products-grid">
+          <div style={{ marginBottom: "2rem", textAlign: "center" }}>
+            <Title level={2} style={{ marginBottom: "0.5rem" }}>
+              {category === "all" ? "All Products" : `${category.charAt(0).toUpperCase() + category.slice(1)} Products`}
+            </Title>
+            {search && (
+              <Paragraph style={{ color: "#666" }}>
+                Search results for "{search}" ({filteredProducts.length} found)
+              </Paragraph>
+            )}
+          </div>
+
+          {/* Product Grid */}
+          {filteredProducts.length === 0 ? (
+            <div className="empty-state">
+              <Empty
+                description={
+                  <span>
+                    {search ? `No products found for "${search}"` : "No products available"}
+                  </span>
+                }
+                style={{ padding: "4rem 0" }}
+              />
+            </div>
+          ) : (
+            <Row gutter={[24, 24]}>
+              {filteredProducts.map((product) => (
+                <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
+                  <ProductCard product={product} />
+                </Col>
+              ))}
+            </Row>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Home;
           </Col>
         ))}
       </Row>
